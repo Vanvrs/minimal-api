@@ -1,47 +1,71 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
-using Minimal.Infraestrutura.Db;
-using minimal_api.Dominio.Entidades;
+using Microsoft.Extensions.Configuration;
+using MinimalApi.Dominio.Entidades;
+using MinimalApi.Dominio.Servicos;
+using MinimalApi.Infraestrutura.Db;
 
-
-namespace Test.Domain.Servicos;
+namespace Test.Domain.Entidades;
 
 [TestClass]
 public class AdministradorServicoTest
 {
-  /*   private DbContexto CriarContextoDeTeste()
+    private DbContexto CriarContextoDeTeste()
     {
-        var options = new DbContextOptionsBuilder<DbContexto>()
-        .UseInMemoryDatabase(databaseName:"TesteDatabase")
-        .Options;
+        var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        var path = Path.GetFullPath(Path.Combine(assemblyPath ?? "", "..", "..", ".."));
 
-        return new DbContexto(options);
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(path ?? Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddEnvironmentVariables();
 
+        var configuration = builder.Build();
 
-    } */
-       
+        return new DbContexto(configuration);
+    }
 
 
     [TestMethod]
     public void TestandoSalvarAdministrador()
     {
-        //arrange - todas as variáveis criadas para validações
+        // Arrange
+        var context = CriarContextoDeTeste();
+        context.Database.ExecuteSqlRaw("TRUNCATE TABLE Administradores");
+
         var adm = new Administrador();
-        adm.Id = 1;
         adm.Email = "teste@teste.com";
         adm.Senha = "teste";
         adm.Perfil = "Adm";
-        //  var context = CriarContextoDeTeste();
-        var administradorServico = new AdministradorServicoTest();
 
-        //act - ações a serem realizadas
-       // administradorServico.Incluir(adm);
+        var administradorServico = new AdministradorServico(context);
 
+        // Act
+        administradorServico.Incluir(adm);
 
+        // Assert
+        Assert.AreEqual(1, administradorServico.Todos(1).Count());
+    }
 
-        //Assert - validações dos dados
-        Assert.AreEqual(1, adm.Id);
-        Assert.AreEqual("teste@teste.com", adm.Email);
-        Assert.AreEqual("teste", adm.Senha);
-        Assert.AreEqual("Adm", adm.Perfil);
+    [TestMethod]
+    public void TestandoBuscaPorId()
+    {
+        // Arrange
+        var context = CriarContextoDeTeste();
+        context.Database.ExecuteSqlRaw("TRUNCATE TABLE Administradores");
+
+        var adm = new Administrador();
+        adm.Email = "teste@teste.com";
+        adm.Senha = "teste";
+        adm.Perfil = "Adm";
+
+        var administradorServico = new AdministradorServico(context);
+
+        // Act
+        administradorServico.Incluir(adm);
+        var admDoBanco = administradorServico.BuscaPorId(adm.Id);
+
+        // Assert
+        Assert.AreEqual(1, admDoBanco?.Id);
     }
 }
